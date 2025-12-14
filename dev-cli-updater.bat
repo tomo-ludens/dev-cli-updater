@@ -10,6 +10,17 @@ if errorlevel 1 (
 )
 
 echo.
+echo ============ GitHub CLI ================
+set "SUCCESS_GH=0"
+set "SKIPPED_GH=0"
+where gh >nul 2>&1
+if errorlevel 1 (
+    echo ⚠️ gh command not found. Skipping.
+) else (
+    call :UpdateGitHubCLI
+)
+
+echo.
 echo ============= Claude Code ==============
 set "SUCCESS_CLAUDE=0"
 set "SKIPPED_CLAUDE=0"
@@ -44,11 +55,54 @@ if errorlevel 1 (
 
 echo.
 echo =============== Summary ================
+call :PrintStatus "GitHub CLI " "%SUCCESS_GH%" "%SKIPPED_GH%"
 call :PrintStatus "Claude Code" "%SUCCESS_CLAUDE%" "%SKIPPED_CLAUDE%"
 call :PrintStatus "Codex CLI  " "%SUCCESS_CODEX%" "%SKIPPED_CODEX%"
 call :PrintStatus "Gemini CLI " "%SUCCESS_GEMINI%" "%SKIPPED_GEMINI%"
 echo.
 pause
+exit /b
+
+:UpdateGitHubCLI
+where winget >nul 2>&1
+if errorlevel 1 (
+    echo ⚠️ winget command not found. Cannot check/update GitHub CLI.
+    exit /b
+)
+
+set "_GH_CURRENT="
+for /f "tokens=3 delims= " %%v in ('gh --version ^| findstr /R "^gh version"') do set "_GH_CURRENT=%%v"
+
+if defined _GH_CURRENT (
+    echo Current: %_GH_CURRENT%
+) else (
+    echo Current: (unknown)
+)
+
+echo Checking for updates...
+set "_GH_HAS_UPDATE="
+for /f "skip=1 tokens=1" %%v in ('winget list --id GitHub.cli --upgrade-available 2^>nul') do (
+    set "_GH_HAS_UPDATE=1"
+    goto :GHCheckDone
+)
+
+:GHCheckDone
+if not defined _GH_HAS_UPDATE (
+    echo ℹ️ Already up to date.
+    set "SKIPPED_GH=1"
+    exit /b
+)
+
+echo Update available. Updating...
+winget upgrade --id GitHub.cli -e --silent --accept-package-agreements --accept-source-agreements
+if errorlevel 1 (
+    echo ⚠️ Update failed.
+    exit /b
+)
+
+echo ✅ Updated successfully.
+cmd /c gh --version
+set "SUCCESS_GH=1"
 exit /b
 
 :UpdateClaude

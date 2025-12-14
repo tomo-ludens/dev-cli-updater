@@ -35,6 +35,70 @@ check_and_update() {
     fi
 }
 
+update_github_cli() {
+    local success_var=$1
+    local skipped_var=$2
+
+    local current
+    current=$(gh --version 2>/dev/null | head -n 1)
+    echo "Current: $current"
+    echo "Checking for updates..."
+
+    # --- macOS / Homebrew ---
+    if command -v brew >/dev/null 2>&1 && brew list --versions gh >/dev/null 2>&1; then
+        if brew outdated gh >/dev/null 2>&1; then
+            echo "Update available. Updating (brew)..."
+            if brew upgrade gh; then
+                echo "✅ Updated successfully."
+                gh --version
+                eval "$success_var=1"
+            else
+                echo "⚠️ Update failed."
+            fi
+        else
+            echo "ℹ️ Already up to date."
+            eval "$skipped_var=1"
+        fi
+        return
+    fi
+
+    # --- Debian / Ubuntu / WSL ---
+    if command -v apt >/dev/null 2>&1; then
+        if command -v sudo >/dev/null 2>&1; then
+            sudo apt update -y >/dev/null 2>&1
+        else
+            apt update -y >/dev/null 2>&1
+        fi
+
+        if apt list --upgradable 2>/dev/null | grep -q '^gh/'; then
+            echo "Update available. Updating (apt)..."
+            if command -v sudo >/dev/null 2>&1; then
+                if sudo apt install -y gh; then
+                    echo "✅ Updated successfully."
+                    gh --version
+                    eval "$success_var=1"
+                else
+                    echo "⚠️ Update failed."
+                fi
+            else
+                if apt install -y gh; then
+                    echo "✅ Updated successfully."
+                    gh --version
+                    eval "$success_var=1"
+                else
+                    echo "⚠️ Update failed."
+                fi
+            fi
+        else
+            echo "ℹ️ Already up to date."
+            eval "$skipped_var=1"
+        fi
+        return
+    fi
+
+    echo "⚠️ Supported package manager not found for GitHub CLI (gh)."
+}
+
 print_status() {
     local name=$1
     local success=$2
@@ -48,6 +112,16 @@ print_status() {
         echo "$name: ⚠️ Not installed / Failed"
     fi
 }
+
+echo ""
+echo "============= GitHub CLI =============="
+SUCCESS_GH=0
+SKIPPED_GH=0
+if ! command -v gh &> /dev/null; then
+    echo "⚠️ gh command not found. Skipping."
+else
+    update_github_cli SUCCESS_GH SKIPPED_GH
+fi
 
 echo ""
 echo "============= Claude Code =============="
@@ -133,6 +207,7 @@ fi
 
 echo ""
 echo "=============== Summary ================"
+print_status "GitHub CLI  " $SUCCESS_GH $SKIPPED_GH
 print_status "Claude Code " $SUCCESS_CLAUDE $SKIPPED_CLAUDE
 print_status "Codex CLI   " $SUCCESS_CODEX $SKIPPED_CODEX
 print_status "Gemini CLI  " $SUCCESS_GEMINI $SKIPPED_GEMINI
