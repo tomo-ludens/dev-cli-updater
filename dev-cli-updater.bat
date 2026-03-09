@@ -79,6 +79,14 @@ echo.
 pause
 exit /b
 
+:PrintValueLine
+setlocal DisableDelayedExpansion
+set "_LABEL=%~1"
+set "_VALUE=%~2"
+<nul set /p "=%_LABEL%%_VALUE%"
+echo.
+exit /b
+
 :UpdateGitHubCLI
 where winget >nul 2>&1
 if errorlevel 1 (
@@ -88,10 +96,10 @@ if errorlevel 1 (
 )
 
 set "_GH_CURRENT="
-for /f "tokens=3 delims= " %%v in ('gh --version ^| findstr /R "^gh version"') do set "_GH_CURRENT=%%v"
+for /f "tokens=3 delims= " %%v in ('gh --version ^| findstr /R "^gh version"') do if not defined _GH_CURRENT set "_GH_CURRENT=%%v"
 
 if defined _GH_CURRENT (
-    echo Current: %_GH_CURRENT%
+    call :PrintValueLine "Current: " "!_GH_CURRENT!"
 ) else (
     echo Current: ^(unknown^)
 )
@@ -119,37 +127,54 @@ exit /b
 
 :UpdateClaude
 set "_CLAUDE_BEFORE="
-for /f "usebackq delims=" %%v in (`claude --version 2^>nul`) do set "_CLAUDE_BEFORE=%%v"
+for /f "usebackq delims=" %%v in (`claude --version 2^>nul`) do if not defined _CLAUDE_BEFORE set "_CLAUDE_BEFORE=%%v"
 
 if defined _CLAUDE_BEFORE (
-    echo Current: %_CLAUDE_BEFORE%
+    call :PrintValueLine "Current: " "!_CLAUDE_BEFORE!"
 ) else (
     echo Current: ^(unknown^)
 )
 
+set "_CLAUDE_LOG=%TEMP%\dev-cli-updater-claude-%RANDOM%-%RANDOM%.log"
 echo Running: claude update
-call claude update
-if errorlevel 1 (
+cmd /c claude update > "!_CLAUDE_LOG!" 2>&1
+set "_CLAUDE_EXIT=!ERRORLEVEL!"
+
+if not "!_CLAUDE_EXIT!"=="0" (
+    if exist "!_CLAUDE_LOG!" type "!_CLAUDE_LOG!"
+    if exist "!_CLAUDE_LOG!" del /q "!_CLAUDE_LOG!" >nul 2>&1
     echo ⚠️ Update failed.
     set "FAILED_CLAUDE=1"
     exit /b
 )
 
-set "_CLAUDE_AFTER="
-for /f "usebackq delims=" %%v in (`claude --version 2^>nul`) do set "_CLAUDE_AFTER=%%v"
-
-if defined _CLAUDE_AFTER (
-    echo After:   %_CLAUDE_AFTER%
+findstr /I /C:"up to date" /C:"already up to date" /C:"latest version" "!_CLAUDE_LOG!" >nul
+if not errorlevel 1 (
+    if exist "!_CLAUDE_LOG!" del /q "!_CLAUDE_LOG!" >nul 2>&1
+    echo ℹ️ Already up to date.
+    set "SKIPPED_CLAUDE=1"
+    exit /b
 )
 
-if defined _CLAUDE_BEFORE if defined _CLAUDE_AFTER (
-    if /I "%_CLAUDE_BEFORE%"=="%_CLAUDE_AFTER%" (
-        echo ℹ️ Already up to date ^(or updates apply on next start^).
-        set "SKIPPED_CLAUDE=1"
-        exit /b
+set "_CLAUDE_AFTER="
+for /f "usebackq delims=" %%v in (`claude --version 2^>nul`) do if not defined _CLAUDE_AFTER set "_CLAUDE_AFTER=%%v"
+
+if defined _CLAUDE_AFTER (
+    call :PrintValueLine "After:   " "!_CLAUDE_AFTER!"
+)
+
+if defined _CLAUDE_BEFORE (
+    if defined _CLAUDE_AFTER (
+        if /I "!_CLAUDE_BEFORE!"=="!_CLAUDE_AFTER!" (
+            if exist "!_CLAUDE_LOG!" del /q "!_CLAUDE_LOG!" >nul 2>&1
+            echo ℹ️ Already up to date ^(or updates apply on next start^).
+            set "SKIPPED_CLAUDE=1"
+            exit /b
+        )
     )
 )
 
+if exist "!_CLAUDE_LOG!" del /q "!_CLAUDE_LOG!" >nul 2>&1
 echo ✅ Update command completed.
 set "SUCCESS_CLAUDE=1"
 exit /b
@@ -162,10 +187,10 @@ set "_SKIPPED_VAR=%~4"
 set "_FAILED_VAR=%~5"
 
 set "_CURRENT="
-for /f "tokens=*" %%v in ('%_CMD% --version 2^>nul') do set "_CURRENT=%%v"
+for /f "tokens=*" %%v in ('%_CMD% --version 2^>nul') do if not defined _CURRENT set "_CURRENT=%%v"
 
 if defined _CURRENT (
-    echo Current: %_CURRENT%
+    call :PrintValueLine "Current: " "!_CURRENT!"
 ) else (
     echo Current: ^(unknown^)
 )
