@@ -163,7 +163,12 @@ set "_FAILED_VAR=%~5"
 
 set "_CURRENT="
 for /f "tokens=*" %%v in ('%_CMD% --version 2^>nul') do set "_CURRENT=%%v"
-echo Current: %_CURRENT%
+
+if defined _CURRENT (
+    echo Current: %_CURRENT%
+) else (
+    echo Current: ^(unknown^)
+)
 
 echo Checking for updates...
 set "_OUTDATED="
