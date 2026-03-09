@@ -44,7 +44,8 @@ check_and_update() {
 update_github_cli() {
     local success_var=$1
     local skipped_var=$2
-    local failed_var=$3
+    local deps_var=$3
+    local failed_var=$4
 
     local current
     current=$(gh --version 2>/dev/null | head -n 1)
@@ -53,7 +54,9 @@ update_github_cli() {
 
     # --- macOS / Homebrew ---
     if command -v brew >/dev/null 2>&1 && brew list --versions gh >/dev/null 2>&1; then
-        if brew outdated gh >/dev/null 2>&1; then
+        local brew_outdated
+        brew_outdated=$(brew outdated gh 2>/dev/null)
+        if [ -n "$brew_outdated" ]; then
             echo "Update available. Updating (brew)..."
             if brew upgrade gh; then
                 echo "✅ Updated successfully."
@@ -72,32 +75,22 @@ update_github_cli() {
 
     # --- Debian / Ubuntu / WSL ---
     if command -v apt >/dev/null 2>&1; then
+        local apt_prefix=""
         if command -v sudo >/dev/null 2>&1; then
-            sudo apt update -y >/dev/null 2>&1
-        else
-            apt update -y >/dev/null 2>&1
+            apt_prefix="sudo"
         fi
+
+        $apt_prefix apt update -y >/dev/null 2>&1
 
         if apt list --upgradable 2>/dev/null | grep -q '^gh/'; then
             echo "Update available. Updating (apt)..."
-            if command -v sudo >/dev/null 2>&1; then
-                if sudo apt install -y gh; then
-                    echo "✅ Updated successfully."
-                    gh --version
-                    eval "$success_var=1"
-                else
-                    echo "⚠️ Update failed."
-                    eval "$failed_var=1"
-                fi
+            if $apt_prefix apt install -y gh; then
+                echo "✅ Updated successfully."
+                gh --version
+                eval "$success_var=1"
             else
-                if apt install -y gh; then
-                    echo "✅ Updated successfully."
-                    gh --version
-                    eval "$success_var=1"
-                else
-                    echo "⚠️ Update failed."
-                    eval "$failed_var=1"
-                fi
+                echo "⚠️ Update failed."
+                eval "$failed_var=1"
             fi
         else
             echo "ℹ️ Already up to date."
@@ -107,6 +100,7 @@ update_github_cli() {
     fi
 
     echo "⚠️ Supported package manager not found for GitHub CLI (gh)."
+    eval "$deps_var=1"
 }
 
 print_status() {
@@ -138,7 +132,7 @@ FAILED_GH=0
 if ! command -v gh &> /dev/null; then
     echo "⚠️ gh command not found. Skipping."
 else
-    update_github_cli SUCCESS_GH SKIPPED_GH FAILED_GH
+    update_github_cli SUCCESS_GH SKIPPED_GH DEPS_GH FAILED_GH
 fi
 
 echo ""
