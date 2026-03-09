@@ -224,8 +224,13 @@ else
 
     echo "Checking for updates..."
     update_output=$(cursor-agent update 2>&1)
+    update_exit=$?
 
-    if echo "$update_output" | grep -qi "already.*up.*to.*date\|no.*update\|latest"; then
+    if [ $update_exit -ne 0 ]; then
+        echo "$update_output"
+        echo "⚠️ Update failed."
+        FAILED_CURSOR=1
+    elif echo "$update_output" | grep -qi "already.*up.*to.*date\|no.*update\|latest"; then
         echo "ℹ️ Already up to date."
         SKIPPED_CURSOR=1
     elif echo "$update_output" | grep -qi "updated\|success\|upgrade"; then
