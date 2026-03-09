@@ -89,11 +89,3 @@ chmod +x dev-cli-updater.sh
 ## ライセンス
 
 MIT
-
-```
-補足（README に反映した前提）：
-- `Claude Code` は手動更新として `claude update` が公式に案内されています。:contentReference[oaicite:0]{index=0}
-- `Codex CLI` は macOS/Linux が公式サポートで、Windows は experimental（WSL 推奨）です。:contentReference[oaicite:1]{index=1}
-- `cursor-agent update` / `cursor-agent upgrade` が手動更新手段として案内されています。:contentReference[oaicite:2]{index=2}
-::contentReference[oaicite:3]{index=3}
-```
