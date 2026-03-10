@@ -17,7 +17,7 @@ check_and_update() {
     local failed_var=$5
 
     local current
-    current=$($cmd --version 2>/dev/null)
+    current=$($cmd --version 2>/dev/null | head -n 1)
     echo "Current: $current"
 
     echo "Checking for updates..."
@@ -144,7 +144,7 @@ FAILED_CLAUDE=0
 if ! command -v claude &> /dev/null; then
     echo "⚠️ claude command not found. Skipping."
 else
-    claude_before=$(claude --version 2>/dev/null)
+    claude_before=$(claude --version 2>/dev/null | head -n 1)
     if [ -n "$claude_before" ]; then
         echo "Current: $claude_before"
     else
@@ -152,13 +152,19 @@ else
     fi
 
     echo "Running: claude update"
-    if claude update; then
-        claude_after=$(claude --version 2>/dev/null)
+    claude_update_output=$(claude update 2>&1)
+    claude_update_exit=$?
+
+    if [ "$claude_update_exit" -eq 0 ]; then
+        claude_after=$(claude --version 2>/dev/null | head -n 1)
         if [ -n "$claude_after" ]; then
             echo "After:   $claude_after"
         fi
 
-        if [ -n "$claude_before" ] && [ -n "$claude_after" ]; then
+        if printf '%s\n' "$claude_update_output" | grep -qi "up to date\|already.*up.*to.*date\|latest version"; then
+            echo "ℹ️ Already up to date."
+            SKIPPED_CLAUDE=1
+        elif [ -n "$claude_before" ] && [ -n "$claude_after" ]; then
             if [ "$claude_before" = "$claude_after" ]; then
                 echo "ℹ️ Already up to date (or updates apply on next start)."
                 SKIPPED_CLAUDE=1
@@ -171,6 +177,9 @@ else
             SUCCESS_CLAUDE=1
         fi
     else
+        if [ -n "$claude_update_output" ]; then
+            printf '%s\n' "$claude_update_output"
+        fi
         echo "⚠️ Update failed."
         FAILED_CLAUDE=1
     fi
@@ -219,7 +228,7 @@ FAILED_CURSOR=0
 if ! command -v cursor-agent &> /dev/null; then
     echo "⚠️ cursor-agent command not found. Skipping."
 else
-    current_cursor=$(cursor-agent --version 2>/dev/null)
+    current_cursor=$(cursor-agent --version 2>/dev/null | head -n 1)
     echo "Current: $current_cursor"
 
     echo "Checking for updates..."
@@ -238,7 +247,7 @@ else
         cursor-agent --version
         SUCCESS_CURSOR=1
     else
-        new_cursor=$(cursor-agent --version 2>/dev/null)
+        new_cursor=$(cursor-agent --version 2>/dev/null | head -n 1)
         if [ "$current_cursor" = "$new_cursor" ]; then
             echo "ℹ️ Already up to date."
             SKIPPED_CURSOR=1
