@@ -53,6 +53,7 @@ Both scripts follow the same per-tool flow: check command exists -> get current 
 
 - **Keep .bat and .sh functionally aligned.** Same tools, same behavior, same summary format — except: .bat intentionally omits Cursor Agent (no WSL invocation from .bat).
 - **Claude Code must not require npm.** Use `claude update` (built-in updater). Don't fall back to `npm install -g`.
+- **Claude Code .bat: use `cmd /c`, not `call`.** `claude` resolves to a `.cmd` wrapper; `call claude` inlines its execution, which corrupts the parent batch parser state. Always use `cmd /c claude update` to run in a subprocess.
 - **brew outdated detection:** Check output content (`[ -n "$brew_outdated" ]`), not exit code — `brew outdated` returns 0 regardless.
 - **npm outdated detection:** Empty output means up-to-date.
 - **Package names are exact:** `@openai/codex`, `@google/gemini-cli`.
@@ -65,7 +66,7 @@ Both scripts follow the same per-tool flow: check command exists -> get current 
 - `where` replaces `command -v`; `errorlevel 1` replaces `$?`.
 - `for /f` loops with backticks or pipes need `^|` and `2^>nul` escaping.
 - `cmd /c <tool> --version` is used after update to get fresh output (avoids cached PATH).
-- `call npm install ...` — `call` is needed for npm.cmd to return control.
+- `call npm install ...` — `call` is needed for npm.cmd to return control. But for `claude`, use `cmd /c` instead (see Key Constraints).
 
 ## Testing Checklist
 
@@ -77,6 +78,18 @@ Since there are no automated tests, verify manually on the target platform:
 - Missing dependency (npm/winget/brew/apt) shows "Skipped (missing dependency)"
 - Failed update shows "Failed"
 - Summary table matches actual results
+- Run `bash -n dev-cli-updater.sh` after shell changes as a syntax check
+
+## Coding Style
+
+- Shell: `lower_snake_case` for functions, `UPPER_SNAKE_CASE` for state variables
+- Batch: PascalCase labels (`:UpdateGitHubCLI`), `UPPER_SNAKE_CASE` for state variables
+- 4 spaces indentation in both scripts
+- Keep status messages consistent with README summary labels
+
+## Commit Conventions
+
+Follow Conventional Commits as seen in history: `fix(bat):`, `fix(sh):`, `docs(readme):`, `chore(gitattributes):`. Keep subject concise and scoped. If output text changes, include a sample of the new console messages in the PR description.
 
 ## References
 
