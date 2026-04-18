@@ -11,7 +11,6 @@ AI / 開発者向け CLI ツールを **インストール済みのものだけ*
 - [Claude Code](https://github.com/anthropics/claude-code)（`claude`）
 - [Codex CLI](https://github.com/openai/codex)（`codex`）
 - [Gemini CLI](https://github.com/google-gemini/gemini-cli)（`gemini`）
-- [Cursor Agent](https://github.com/getcursor/cursor)（`cursor-agent`）※ `dev-cli-updater.sh` のみ（Windows `.bat` では更新しません）
 
 ## 仕様（概要）
 
@@ -41,7 +40,7 @@ GitHub CLI（`gh`）のアップデートはシステムのパッケージマネ
 
 ### 実行環境
 - Windows: `cmd.exe` または PowerShell
-- macOS / Linux: `bash`
+- macOS / Linux: `sh`
 
 ## 使い方
 
@@ -51,7 +50,7 @@ GitHub CLI（`gh`）のアップデートはシステムのパッケージマネ
 ```powershell
 cd <project-root>
 .\dev-cli-updater.bat
-````
+```
 
 > PowerShell はセキュリティ上の理由から、カレントディレクトリのコマンドを自動で検索しません。そのため、`.\` を先頭に付ける必要があります。
 
@@ -69,6 +68,12 @@ chmod +x dev-cli-updater.sh
 ./dev-cli-updater.sh
 ```
 
+または:
+
+```sh
+sh dev-cli-updater.sh
+```
+
 ## ステータス（Summary の表示）
 
 サマリーは概ね次のいずれかで表示されます。
@@ -84,7 +89,6 @@ chmod +x dev-cli-updater.sh
 * このスクリプトは **既にインストールされているツールのみ** をアップデートします。未インストールのツールはスキップされます。
 * GitHub CLI の更新は `winget` / `brew` / `apt` に依存します。環境によっては権限昇格（管理者 / `sudo`）が必要です。
 * Debian / Ubuntu / WSL では、GitHub CLI が **GitHub CLI 公式 APT リポジトリ**由来である必要があります（ディストリビューション側のコミュニティパッケージは対象外）。
-* Windows `.bat` は `cursor-agent` を更新しません（必要なら WSL 上で `.sh` を実行する運用にしてください）。
 
 ## ライセンス
 
