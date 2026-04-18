@@ -216,50 +216,9 @@ else
 fi
 
 echo ""
-echo "============ Cursor Agent =============="
-SUCCESS_CURSOR=0
-SKIPPED_CURSOR=0
-DEPS_CURSOR=0
-FAILED_CURSOR=0
-if ! command -v cursor-agent >/dev/null 2>&1; then
-    echo "⚠️ cursor-agent command not found. Skipping."
-else
-    current_cursor=$(cursor-agent --version 2>/dev/null | head -n 1)
-    echo "Current: $current_cursor"
-
-    echo "Checking for updates..."
-    update_output=$(cursor-agent update 2>&1)
-    update_exit=$?
-
-    if [ "$update_exit" -ne 0 ]; then
-        echo "$update_output"
-        echo "⚠️ Update failed."
-        FAILED_CURSOR=1
-    elif echo "$update_output" | grep -qi "already.*up.*to.*date\|no.*update\|latest"; then
-        echo "ℹ️ Already up to date."
-        SKIPPED_CURSOR=1
-    elif echo "$update_output" | grep -qi "updated\|success\|upgrade"; then
-        echo "✅ Updated successfully."
-        cursor-agent --version
-        SUCCESS_CURSOR=1
-    else
-        new_cursor=$(cursor-agent --version 2>/dev/null | head -n 1)
-        if [ "$current_cursor" = "$new_cursor" ]; then
-            echo "ℹ️ Already up to date."
-            SKIPPED_CURSOR=1
-        else
-            echo "✅ Updated successfully."
-            cursor-agent --version
-            SUCCESS_CURSOR=1
-        fi
-    fi
-fi
-
-echo ""
 echo "=============== Summary ================"
 print_status "GitHub CLI  " "$SUCCESS_GH" "$SKIPPED_GH" "$DEPS_GH" "$FAILED_GH"
 print_status "Claude Code " "$SUCCESS_CLAUDE" "$SKIPPED_CLAUDE" "$DEPS_CLAUDE" "$FAILED_CLAUDE"
 print_status "Codex CLI   " "$SUCCESS_CODEX" "$SKIPPED_CODEX" "$DEPS_CODEX" "$FAILED_CODEX"
 print_status "Gemini CLI  " "$SUCCESS_GEMINI" "$SKIPPED_GEMINI" "$DEPS_GEMINI" "$FAILED_GEMINI"
-print_status "Cursor Agent" "$SUCCESS_CURSOR" "$SKIPPED_CURSOR" "$DEPS_CURSOR" "$FAILED_CURSOR"
 echo ""
