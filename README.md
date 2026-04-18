@@ -41,7 +41,7 @@ GitHub CLI（`gh`）のアップデートはシステムのパッケージマネ
 
 ### 実行環境
 - Windows: `cmd.exe` または PowerShell
-- macOS / Linux: `bash`
+- macOS / Linux: `sh`
 
 ## 使い方
 
@@ -51,7 +51,7 @@ GitHub CLI（`gh`）のアップデートはシステムのパッケージマネ
 ```powershell
 cd <project-root>
 .\dev-cli-updater.bat
-````
+```
 
 > PowerShell はセキュリティ上の理由から、カレントディレクトリのコマンドを自動で検索しません。そのため、`.\` を先頭に付ける必要があります。
 
@@ -67,6 +67,12 @@ dev-cli-updater.bat
 ```bash
 chmod +x dev-cli-updater.sh
 ./dev-cli-updater.sh
+```
+
+または:
+
+```sh
+sh dev-cli-updater.sh
 ```
 
 ## ステータス（Summary の表示）
